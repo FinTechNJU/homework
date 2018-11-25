@@ -115,7 +115,7 @@ public static class SortMapper extends Mapper<Text,Text,NewText,Text>
 * **第四个类**
 
 ``` java
-public class NewText implements WritableComparable<NewText>
+public class NewFormat implements WritableComparable<NewFormat>
 ```
 
 * 在这里compare是可以按照（1）词（2）词频 进行升序排列的
