@@ -106,7 +106,7 @@ public static class wordCountReducer extends Reducer<Text,Text,Text,Text>
 * **第三个类**
 
 ``` java
-public static class SortMapper extends Mapper<Text,Text,NewText,Text>
+public static class SortMapper extends Mapper<Text,Text,NewFormat,Text>
 ```
 
 * 此处实现了对结果的排序。
