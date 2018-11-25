@@ -24,10 +24,8 @@ public class WordCount{
     public static class WordCountMapper extends Mapper<LongWritable,Text,Text,IntWritable>{
         private final static IntWritable one = new IntWritable(1);
         private Text word = new Text();
-        private String pattern = "[^\u4e00-\u9fa5]";
         public void map(LongWritable offset, Text value, Context context) throws IOException,InterruptedException{
             String line = value.toString();
-            //line = line.replaceAll(pattern, "");
             String []lines = line.split("\t");
             if(lines.length==6){
                 line=line.split("\t")[4];
