@@ -91,7 +91,8 @@ public static class wordCountMapper extends Mapper<LongWritable,Text,Text,Text>
 
 * 此处实现了取出股票的标题、股票的代码、股票的url。
 * 接着对标题进行分词
-* 输出的格式是<phrase + stock code, url + 1>
+* 输出的格式是<phrase + stock code, url, 1>
+* 这里是1，是因为词都还没有合并
 
 * **第二个类**
 
