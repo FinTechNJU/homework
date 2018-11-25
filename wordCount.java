@@ -21,35 +21,27 @@ import org.apdplat.word.segmentation.Word;
 
 public class wordCount{
 
-    public static class NewText implements WritableComparable<NewText> {
-    
+    public static class NewFormat implements WritableComparable<NewFormat> {
         //書上P264 定製自己的數據類型
         public String string;
         public int fre;
 
-        public NewText() {}
+        public NewFormat() {}
         //构造函数
-
-        public void set(String line) {
-            String[] linesplit = line.split(" ");
-            string = linesplit[0];
-            fre = Integer.parseInt(linesplit[1]);
-        }
-
         public String toString() {
             return string+" "+Integer.toString(fre);
         }
         public void readFields(DataInput in) throws IOException{
-            string = in.readUTF();
-            fre = in.readInt();
+            string = in.readUTF();fre = in.readInt();
         }
-
         public void write(DataOutput out) throws IOException{
-            out.writeUTF(string);
-            out.writeInt(fre);
+            out.writeUTF(string);out.writeInt(fre);
         }
 
-        public int compareTo(NewText str) {
+        public void set(String line) {
+            String[] lines = line.split(" ");string = lines[0];fre = Integer.parseInt(lines[1]);
+        }
+        public int compareTo(NewFormat str) {
             int wordcompare = string.compareTo(str.string);
             int freq = str.fre-fre;
             if(wordcompare < 0)return 1;
@@ -61,20 +53,20 @@ public class wordCount{
     }
 
     public static class wordCountMapper extends Mapper<LongWritable,Text,Text,Text>{
-        private Text wordkey = new Text();
-        private Text wordvalue = new Text();
+        private Text key = new Text();
+        private Text value = new Text();
 
         public void map(LongWritable offset,Text value,Context context) throws IOException,InterruptedException{
 
             String line = value.toString();
-            String[] linesplit = line.split("\t");
-
-            if(linesplit.length == 6) {
-                wordvalue.set(linesplit[5]+",1");
-                List<Word> words = WordSegmenter.seg(linesplit[4]);
-                for(Word w:words) {
-                    wordkey.set(w.getText()+","+linesplit[0]);
-                    context.write(wordkey, wordvalue);
+            String[] lines = line.split("\t");
+            int length=lines.length;
+            if(length - 6 == 0) {
+                List<Word> words = WordSegmenter.seg(lines[4]);
+                value.set(lines[5]+",1");
+                for(Word i:words) {
+                    key.set(i.getText()+","+lines[0]);
+                    context.write(key, value);
                 }
             }
             else
@@ -85,21 +77,19 @@ public class wordCount{
     }
 
     public static class wordCountReducer extends Reducer<Text,Text,Text,Text>{
-        private Text newkey = new Text();
-        private Text result = new Text();
+        private Text a = new Text();
+        private Text b = new Text();
         public void reduce(Text key, Iterable<Text> values,Context context) throws IOException,InterruptedException{
-            int sum = 0;
-            String urls = "";
-            for (Text val:values) {
-                String[] v = val.toString().split(",");
-                sum += Integer.parseInt(v[1]);
-                urls += v[0]+" ";
+            int sum = 0;String url = "";String[] lines = key.toString().split(",");
+            for (Text i:values) {
+                String[] tmp = i.toString().split(",");
+                url = url + tmp[0]+" ";
+                sum += Integer.parseInt(tmp[1]);
             }
-            String[] k = key.toString().split(",");
-            if(k.length == 2) {
-                newkey.set(k[0]+" "+Integer.toString(sum));
-                result.set(k[1]+","+urls);
-                context.write(newkey, result);
+            if(lines.length == 2) {
+                a.set(lines[0]+" "+Integer.toString(sum));
+                b.set(lines[1]+","+url);
+                context.write(a, b);
             }
             else{
                 return;
@@ -107,9 +97,9 @@ public class wordCount{
         }
     }
 
-    public static class SortMapper extends Mapper<Text,Text,NewText,Text>{
-        //将key格式由Text转换为NewText
-        private NewText newkey = new NewText();
+    public static class SortMapper extends Mapper<Text,Text,NewFormat,Text>{
+        //将key格式由Text转换为NewFormat
+        private NewFormat newkey = new NewFormat();
         public void map(Text key,Text value,Context context) throws IOException,InterruptedException{
             newkey.set(key.toString());
             context.write(newkey, value);
@@ -145,7 +135,7 @@ public class wordCount{
             sortjob.setInputFormatClass(KeyValueTextInputFormat.class);
             sortjob.setMapperClass(SortMapper.class);
             sortjob.setNumReduceTasks(1);
-            sortjob.setOutputKeyClass(NewText.class);
+            sortjob.setOutputKeyClass(NewFormat.class);
             sortjob.setOutputValueClass(Text.class);
             FileInputFormat.addInputPath(sortjob, tempPath);
             FileOutputFormat.setOutputPath(sortjob, outputPath);
