@@ -59,11 +59,19 @@ private static class IntWritableDecreasingComparator extends IntWritable.Compara
 
 <h2>需求二</h2>
 <h4>一、实验目的：</h4>
-针对股票新闻数据集中的新闻标题，编写WordCount程序，统计所有除Stop-word（如“的”，“得”，“在”等）出现次数k次以上的单词计数，最后的结果按照词频从高到低排序输出。
+针对股票新闻数据集，以新闻标题中的词组为key，编写带URL属性和词频的文档倒排索引程序，并按照词频从大到小排序，将结果输出到指定文件。输出格式可以如下：
+
+高速公路， 10， 股票代码，[url0, url1,...,url9]
+
+高速公路， 8， 股票代码，[url0, url1,...,url7]
+
+
 <h4>二、实验的设计思路</h4>
-包括两个mapreduce
-此实验基于wordcount程序。首先进行分词，然后得到词频。然后，对这些键值对进行排序。
-其中，调用了word.jar来实现了分词的功能。排序的功能采用了IntWritableDecreasingComparator.class以及InverseMapper.class（书上P118页）
+
+包括两个mapreduce:
+* 第一个mapreduce实现了
+
+
 <h4>三、算法设计以及各类分析</h4>
 
 整体的流程：
