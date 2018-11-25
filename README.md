@@ -121,11 +121,3 @@ public class NewFormat implements WritableComparable<NewFormat>
 * 在这里compare是可以按照（1）词（2）词频 进行升序排列的
 
 
-<h4>四、改进以及不足之处</h4>
-
-* 实验的过程中，发现两个文件的分隔符是不一样的，
-
->>> 我的改进方案 =>
-
-* 所以进行了一次转换，然后再进行split的操作。
-
