@@ -11,17 +11,23 @@
 此实验基于wordcount程序。首先进行分词，然后得到词频。然后，对这些键值对进行排序。
 其中，调用了word.jar来实现了分词的功能。排序的功能采用了InverseMapper.class（书上P118页）
 <h4>算法设计以及各类分析</h4>
-```java 
+
+``` java 
 public static class WordCountMapper extends Mapper<LongWritable,Text,Text,IntWritable>
 ```
+
 此处实现了读取新闻的标题，然后进行输出。结果的格式是<phrase, num>
-```java
+
+``` java
 public static class IntSumReducer extends Reducer<Text,IntWritable,Text,IntWritable>
 ```
+
 此处实现了统计求和的功能。输出的结果的格式是<phrase,sum of the count>。同时，这里还有阈值的设置，只有词频大于输入的第一个参数k的时候，才会进行统计。
-```java
+
+``` java
 private static class IntWritableDecreasingComparator extends IntWritable.Comparator
 ```
+
 此处实现了对结果的排序。
 
 
