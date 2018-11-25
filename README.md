@@ -9,8 +9,18 @@
 <h4>二、实验的设计思路</h4>
 包括两个mapreduce
 此实验基于wordcount程序。首先进行分词，然后得到词频。然后，对这些键值对进行排序。
-其中，调用了word.jar来实现了分词的功能。排序的功能采用了InverseMapper.class（书上P118页）
+其中，调用了word.jar来实现了分词的功能。排序的功能采用了IntWritableDecreasingComparator.class以及InverseMapper.class（书上P118页）
 <h4>三、算法设计以及各类分析</h4>
+
+整体的流程：
+
+* NewsWCMapper
+
+* IntSumReducer
+
+* InverseMapper -> IntWritableDecreasingComparator
+
+* reducer(这里是对输出的结果自动排序的，hadoop自动实现)
 
 * **第一个类**
 ``` java 
@@ -32,8 +42,11 @@ private static class IntWritableDecreasingComparator extends IntWritable.Compara
 ```
 
 此处实现了对结果的排序。
+
 <h4>四、改进以及不足之处</h4>
+
 * 本来对于每一行的每一个字符进行判断（判断是否是中文字符，然后再进行分词和匹配）
+
 
 >>> 我的改进方案 =>
 
