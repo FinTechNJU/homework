@@ -62,8 +62,7 @@ public class wordCount{
             String[] lines = line.split("\t");
             int length=lines.length;
             if(length - 6 == 0) {
-                List<Word> words = WordSegmenter.seg(lines[4]);
-                value.set(lines[5]+",1");
+                List<Word> words = WordSegmenter.seg(lines[4]);value.set(lines[5]+",1");
                 for(Word i:words) {
                     key.set(i.getText()+","+lines[0]);
                     context.write(key, value);
