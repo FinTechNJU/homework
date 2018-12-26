@@ -14,9 +14,6 @@ import org.apache.hadoop.fs.FSDataInputStream;
 import org.apache.hadoop.util.LineReader;
 
 public class KNN{
-    //map阶段计算出每条新闻最邻近的k个训练样本，输出<新闻，情感标签列表>
-    //reduce阶段转化为情感输出<新闻，情感>
-
     public static int DISTANCE(int[] a,int[] b) {
 
         int dis = 0;
@@ -29,7 +26,6 @@ public class KNN{
 
 
     public static String[] GET_TRIAN_DATA(Configuration conf, Path inputpath) throws IOException{
-        //获取训练集
         Text line = new Text();
         ArrayList<String> train = new ArrayList<String>();
         FileSystem fs = FileSystem.get(conf);
@@ -52,7 +48,6 @@ public class KNN{
 
 
         protected void setup(Context context) {
-            //获取训练集和k
             String[] samples= context.getConfiguration().getStrings("sample");
             m = samples.length;
 
@@ -78,7 +73,7 @@ public class KNN{
             String[] MOOD = {"positive","negative","neutral"};
 
             int[] distances = new int[k];
-            int[] TAG = new int[k];//情感标签，默认为0
+            int[] TAG = new int[k];
             for(int i=0;i<k;i++) {
                 distances[i]=Integer.MAX_VALUE;
             }
@@ -135,8 +130,8 @@ public class KNN{
     public static void main(String[] args) throws Exception{
         //Usage: knn <train_in> <predict_in> <out>
         Configuration conf = new Configuration();
-        Path inputPath1 = new Path(args[0]);//训练集
-        Path inputPath2 = new Path(args[1]);//预测集
+        Path inputPath1 = new Path(args[0]);
+        Path inputPath2 = new Path(args[1]);
         Path outputPath = new Path(args[2]);
         String[] sample = GET_TRIAN_DATA(conf,inputPath1);
         conf.setStrings("sample", sample);
