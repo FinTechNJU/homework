@@ -1,133 +1,141 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 """
-Created on Mon May 20 15:37:25 2019
+Created on Sun May 26 00:26:38 2019
 
 @author: lilangyi
 """
 
-import numpy as np 
+import numpy as np
 import pandas as pd
+import matplotlib.pyplot as plt
+
 from pandas import DataFrame
-
 from sklearn import tree
-from sklearn import preprocessing
-from sklearn.model_selection import KFold
-#import math
 from sklearn.metrics import roc_auc_score
+from sklearn.model_selection import KFold
 
 
-
-def loadData(path):
-    
+def loadData(path):  
     fr=open("/Users/lilangyi/Downloads/"+path)
     line= fr.readline()
     if line[0]=="|":
         pass
     else:
-        fr=open("/Users/lilangyi/Downloads/"+path)
-        
+        fr=open("/Users/lilangyi/Downloads/"+path)     
     rd=[]
-    #fr=open("/Users/lilangyi/Downloads/"+path)
     for line in fr.readlines():
-        #print(line)
         arr=line.strip().split(", ")
-        #print(arr)
         rd.append(arr)
-    #yl,xl=len(rd),len(rd[0])
     xMat=DataFrame(rd)  
-    #xMat=xMat.applymap(str) 
-    lst=[0,2,4,10,11,12]
-    for i in lst:
-        xMat[i]=xMat[i].astype(np.int64)    
     for i in range(14):
-        if i not in lst:
-            #xMat[i]=xMat[i].apply(str)
-            #xMat[i]=xMat[i].astype(str)
-            xMat[i]=xMat[i].apply(hash)
-    #print(xMat)  
+        xMat[i]=xMat[i].apply(hash)
+        xMatIMax=max(xMat[i])
+        xMat[i]=xMat[i].apply(lambda x:x/xMatIMax)
+        xMat[i]=xMat[i].apply(lambda x:float("%.2f"%x))
+#        b.ix[i][j]=float('%.2f' %b.ix[i][j])
+#    lst=[0,2,4,10,11,12]
+#    for i in lst:
+#        try:
+#            xMat[i]=xMat[i].astype(np.int64)
+#        except ValueError:
+#            pass
+#    
+#    for i in range(14):
+#        if i not in lst:
+#            xMat[i]=xMat[i].apply(hash)
+##            xMatIMax=max(xMat[i])
+##            xMat[i]=xMat[i].apply(lambda x:x/xMatIMax)
     xMat[14]=xMat[14].replace("<=50K",-1)
     xMat[14]=xMat[14].replace(">50K",1)
     xMat[14]=xMat[14].replace("<=50K.",-1)
-    xMat[14]=xMat[14].replace(">50K.",1)
-    #print(xMat)    
-    return xMat.iloc[:,:-1],xMat.iloc[:,-1]
+    xMat[14]=xMat[14].replace(">50K.",1)  
+    return np.mat(xMat.iloc[:-1,:-1]),np.array(xMat.iloc[:-1,-1])
+
+class AdaBoost:
+    def __init__(self):
+        self.weakClassArr=[]
+        self.weakClassArrAlpha=[]
+        
+    def adaBoostTrainDS(self, dataArr,classLabels,numIt):#numlt：迭代次数
+#        dataArr,classLabels=dataMat,labelMat
+#        weakClassArr=[]
+        m=np.shape(dataArr)[0]
+        D=np.full(m,1/m)
+        aggClassEst=np.full(m,0.0)
+        
+        for i in range(numIt):
+            
+            clf=tree.DecisionTreeClassifier(max_depth=1)  
+            clf.fit(dataArr,classLabels,sample_weight=D)
+            error=1-clf.score(dataArr,classLabels,sample_weight=D)
+            classEst=clf.predict(dataArr)
+            if(error>=0.5):
+                continue
+            alpha=float(0.5*np.log((1.0-error)/max(error,1e-16)))
+            self.weakClassArr.append(clf)
+            self.weakClassArrAlpha.append(alpha)
+            
+            expon=np.multiply(-1*alpha*np.array(classLabels),classEst)
+            D=np.multiply(D.T,np.exp(expon))/D.sum()
+            aggClassEst += alpha*classEst
+            aggErrors = np.multiply(\
+                np.sign(aggClassEst)!= \
+                classLabels,np.full(m,1)\
+                )
+            errorRate=aggErrors.sum()/m
+            if(errorRate==0.0):
+                break
+        return aggClassEst
+
+    def adaClassify(self,dataToClass,labelToClass):
+        aggClassEst,expon=0,0.2
+        for i in range(len(self.weakClassArr)):
+            classEst=self.weakClassArr[i].predict(dataToClass)
+            aggClassEst += \
+            self.weakClassArrAlpha[i]*\
+            roc_auc_score(labelToClass,classEst)/sum(self.weakClassArrAlpha)
+        aggClassEst=aggClassEst**expon
+        return aggClassEst
     
-dataMat,labelMat=loadData("test.data")
-testMat,testlabel=loadData("test.test") 
-print("Data Loaded!")
+    
 
-def ada_train(dataMat,labelMat,testdata,forecast_data,num_trainer):
-    forecast_result=[]
-    trainer_result=[]
-    D=[]#初始化样本权重
-    alpha_list=[]
-    count=np.shape(dataMat)[0]
-    for i in range(count):
-        D.append(1/count)
-        
-    clf = tree.DecisionTreeClassifier(criterion="gini",max_depth=1)    
-    for i in range(num_trainer):
-        clf.fit(dataMat,labelMat,sample_weight=np.array(D))
-        mytrain=clf.predict(dataMat)
-        mysum=0
-        for k in range(len(mytrain)):
-            if(mytrain[k]!=labelMat[k]):
-                mysum+=D[k]
-        e=mysum
-        if(e>0.5):
-            break
-        trainer_pro=clf.predict_proba(testdata)
-        trainer_pro_z=[]
-        for item in trainer_pro:
-            trainer_pro_z.append(item[1])
-        trainer_result.append(trainer_pro_z)
-        
-
-        alpha=0.5*math.log((1-e)/(e))
-        alpha_list.append(alpha)
-        
-        forcast_pro=clf.predict_proba(forecast_data)
-        forcast_pro_z=[]
-        for item in forcast_pro:
-            forcast_pro_z.append(item[1])
-        forecast_result.append(forcast_pro_z)
-        
- #更新样本权重
-        Z=0
-        for j in range(len(D)):
-            Z+=float(D[j]*math.exp(-alpha*mytrain[j]*labelMat[j]))
-        for j in range(len(D)):
-            D[j]=D[j]*math.exp(-alpha*mytrain[j]*labelMat[j])
-    return trainer_result,alpha_list,forecast_result,i+1
-
-#5折交叉
-trainer_num=1
-auc_z=[]
-
-for trainer_num in range(1,20):
-    auc=0
+if __name__=="__main__":
+    print(">>>Process 1:   The processing of data\n>>>Description: To load the given data")
+    
+#    fakeData,realData=True,False
+    realData,fakeData=True,False
+    
+    if(fakeData):
+        dataMat,labelMat=loadData("test.data")
+        testMat,testlabel=loadData("test.test") 
+    elif(realData):
+        dataMat,labelMat=loadData("adult.data")
+        testMat,testlabel=loadData("adult.test") 
+    
+    print(">>>Result:      Data loaded!\n")
+    
+    print(">>>Process 2:   The KFold of data\n>>>Description: To process the loaded data")
+    numIt=1
+    adaBoostList=[]
     kfold= KFold(n_splits=5,random_state =None)
     for train,test in kfold.split(dataMat):
-        trainer_result,alpha_list,forecast_result,count=ada_train(list(np.array(dataMat)[train]),
-                  list(np.array(labelMat)[train]),list(np.array(dataMat)[test]),testMat,trainer_num)
-        for i in range(count):
-            if(i==0):
-                trainer_result_z=np.array(trainer_result[i])*alpha_list[i]/sum(alpha_list)
-            else:
-                trainer_result_z=trainer_result_z+np.array(trainer_result[i])*alpha_list[i]/sum(alpha_list)
-           
-        auc+=roc_auc_score(np.array(labelMat)[test],trainer_result_z)
-    auc_z.append(auc/5)
+        adaBoost=AdaBoost()
+        agg = adaBoost.adaBoostTrainDS(dataMat[train],labelMat[train],numIt)
+        rst = adaBoost.adaClassify(dataMat[test],labelMat[test])
+        adaBoostList.append([adaBoost,numIt,rst])
+        numIt+=4
+    aucList,numItList=[],[]
+    for item in adaBoostList:
+        aucList.append(item[2])
+        numItList.append(item[1])
+    aucIndex=aucList.index(max(aucList))
+    rst = adaBoostList[aucIndex][0].adaClassify(testMat,testlabel)
+    print(">>>Result:      Data processed!")
+    print(">>>Detail:      The AUC of the test set is : %f "%rst)
     
-
-#测试集分类结果
-
-for i in range(count):
-    if(i==0):
-            result=np.array(forecast_result[i])*alpha_list[i]/sum(alpha_list)
-    else:
-            result=result+np.array(forecast_result[i])*alpha_list[i]/sum(alpha_list)
-forecast_auc=roc_auc_score(np.array(testlabel),result)
-print("result:%f"%forecast_auc)
-    
+    plt.plot(np.array(numItList),np.array(aucList))
+    plt.title('Auc of 5-Flod')
+    plt.xlabel('Num of Learner')
+    plt.ylabel('AUC of the Model')
+    plt.show()
